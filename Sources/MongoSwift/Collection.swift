@@ -320,10 +320,19 @@ public struct DeleteOptions: Encodable {
 }
 
 /// The result of an `insertOne` command on a `MongoCollection`. 
-public struct InsertOneResult {
+public struct InsertOneResult: Decodable {
     /// The identifier that was inserted. If the document doesn't have an identifier, this value
     /// will be generated and added to the document before insertion.
     public let insertedId: BsonValue
+
+    private enum CodingKeys: String, CodingKey {
+        case insertedId = "_id"
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.insertedId = try decodeBsonValueFromKeyed(key: .insertedId, container: container)
+    }
 }
 
 /// The result of an `insertMany` command on a `MongoCollection`. 
@@ -343,21 +352,13 @@ public struct InsertManyResult {
 }
 
 /// The result of a `delete` command on a `MongoCollection`. 
-public struct DeleteResult {
+public struct DeleteResult: Decodable {
     /// The number of documents that were deleted.
     public let deletedCount: Int
-
-    /// Given a server response to a delete command, creates a corresponding
-    /// `DeleteResult`. If the `from` Document does not have a `deletedCount`
-    /// field, the initialization will fail.
-    internal init?(from: Document) {
-        guard let deletedCount = from["deletedCount"] as? Int else { return nil }
-        self.deletedCount = deletedCount
-    }
 }
 
 /// The result of an `update` operation a `MongoCollection`.
-public struct UpdateResult {
+public struct UpdateResult: Decodable {
     /// The number of documents that matched the filter.
     public let matchedCount: Int
 
@@ -365,19 +366,21 @@ public struct UpdateResult {
     public let modifiedCount: Int
 
     /// The identifier of the inserted document if an upsert took place.
-    public let upsertedId: Any
+    public let upsertedId: BsonValue?
 
-    /// Given a server response to an update command, creates a corresponding
-    /// `UpdateResult`. If the `from` Document does not have `matchedCount` and
-    /// `modifiedCount` fields, the initialization will fail. The document may
-    /// optionally have an `upsertedId` field.
-    internal init?(from: Document) {
-         guard let matched = from["matchedCount"] as? Int, let modified = from["modifiedCount"] as? Int else {
-            return nil
-         }
-         self.matchedCount = matched
-         self.modifiedCount = modified
-         self.upsertedId = from["upsertedId"] as Any
+    private enum CodingKeys: String, CodingKey {
+        case matchedCount, modifiedCount, upsertedId
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.matchedCount = try container.decode(Int.self, forKey: .matchedCount)
+        self.modifiedCount = try container.decode(Int.self, forKey: .modifiedCount)
+        if let upserted = try? decodeBsonValueFromKeyed(key: .upsertedId, container: container) {
+            self.upsertedId = upserted
+        } else {
+            self.upsertedId = nil
+        }
     }
 }
 
@@ -712,7 +715,8 @@ public class MongoCollection<T: Codable> {
         if !mongoc_collection_insert_one(self._collection, document.data, opts?.data, nil, &error) {
             throw MongoError.commandError(message: toErrorString(error))
         }
-        return InsertOneResult(insertedId: document["_id"]!)
+
+        return try BsonDecoder().decode(InsertOneResult.self, from: document)
     }
 
     /**
@@ -740,6 +744,7 @@ public class MongoCollection<T: Codable> {
             self._collection, &docPointers, documents.count, opts?.data, reply.data, &error) {
             throw MongoError.commandError(message: toErrorString(error))
         }
+
         return InsertManyResult(fromArray: documents.map { $0["_id"]! })
     }
 
@@ -764,7 +769,8 @@ public class MongoCollection<T: Codable> {
             self._collection, filter.data, replacementDoc.data, opts?.data, reply.data, &error) {
             throw MongoError.commandError(message: toErrorString(error))
         }
-        return UpdateResult(from: reply)
+        return try BsonDecoder().decode(UpdateResult.self, from: reply)
+        //return UpdateResult(from: reply)
     }
 
     /**
@@ -787,7 +793,9 @@ public class MongoCollection<T: Codable> {
             self._collection, filter.data, update.data, opts?.data, reply.data, &error) {
             throw MongoError.commandError(message: toErrorString(error))
         }
-        return UpdateResult(from: reply)
+
+        return try BsonDecoder().decode(UpdateResult.self, from: reply)
+        //return UpdateResult(from: reply)
     }
 
     /**
@@ -810,7 +818,9 @@ public class MongoCollection<T: Codable> {
             self._collection, filter.data, update.data, opts?.data, reply.data, &error) {
             throw MongoError.commandError(message: toErrorString(error))
         }
-        return UpdateResult(from: reply)
+
+        return try BsonDecoder().decode(UpdateResult.self, from: reply)
+        //return UpdateResult(from: reply)
     }
 
     /**
@@ -832,7 +842,7 @@ public class MongoCollection<T: Codable> {
             self._collection, filter.data, opts?.data, reply.data, &error) {
             throw MongoError.commandError(message: toErrorString(error))
         }
-        return DeleteResult(from: reply)
+        return try BsonDecoder().decode(DeleteResult.self, from: reply)
     }
 
     /**
@@ -854,7 +864,7 @@ public class MongoCollection<T: Codable> {
             self._collection, filter.data, opts?.data, reply.data, &error) {
             throw MongoError.commandError(message: toErrorString(error))
         }
-        return DeleteResult(from: reply)
+        return try BsonDecoder().decode(DeleteResult.self, from: reply)
     }
 
     /**

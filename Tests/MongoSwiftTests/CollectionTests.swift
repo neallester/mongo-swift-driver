@@ -93,8 +93,8 @@ final class CollectionTests: XCTestCase {
 
     func testInsertOne() throws {
         expect(try self.coll.deleteMany([:])).toNot(beNil())
-        expect(try self.coll.insertOne(self.doc1)?.insertedId as? Int).to(equal(1))
-        expect(try self.coll.insertOne(self.doc2)?.insertedId as? Int).to(equal(2))
+        expect(try self.coll.insertOne(self.doc1)?.insertedId as? Double).to(equal(1))
+        expect(try self.coll.insertOne(self.doc2)?.insertedId as? Double).to(equal(2))
         expect(try self.coll.count()).to(equal(2))
 
         // try inserting a document without an ID to verify one is generated and returned

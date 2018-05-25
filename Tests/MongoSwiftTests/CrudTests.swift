@@ -195,9 +195,9 @@ private class CrudTest {
         let expected = self.result as? Document
         expect(result?.matchedCount).to(equal(expected?["matchedCount"] as? Int))
         expect(result?.modifiedCount).to(equal(expected?["modifiedCount"] as? Int))
-        let upsertedId = result?.upsertedId as? Int
+        let upsertedId = result?.upsertedId as? Double
         if upsertedId != nil {
-            expect(upsertedId).to(equal(expected?["upsertedId"] as? Int))
+            expect(upsertedId).to(equal(Double(expected?["upsertedId"] as! Int)))
         } else {
             expect(expected?["upsertedId"] as? Int).to(beNil())
         }
@@ -299,7 +299,7 @@ private class InsertOneTest: CrudTest {
     override func execute(usingCollection coll: MongoCollection<Document>) throws {
         let doc: Document = try self.args.get("document")
         let result = try coll.insertOne(doc)
-        expect(doc["_id"] as? Int).to(equal(result?.insertedId as? Int))
+        expect(Double(doc["_id"] as! Int)).to(equal(result?.insertedId as? Double))
     }
 }
 
