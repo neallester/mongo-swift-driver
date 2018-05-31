@@ -376,11 +376,7 @@ public struct UpdateResult: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.matchedCount = try container.decode(Int.self, forKey: .matchedCount)
         self.modifiedCount = try container.decode(Int.self, forKey: .modifiedCount)
-        if let upserted = try? decodeBsonValueFromKeyed(key: .upsertedId, container: container) {
-            self.upsertedId = upserted
-        } else {
-            self.upsertedId = nil
-        }
+        self.upsertedId = try? decodeBsonValueFromKeyed(key: .upsertedId, container: container)
     }
 }
 
@@ -770,7 +766,6 @@ public class MongoCollection<T: Codable> {
             throw MongoError.commandError(message: toErrorString(error))
         }
         return try BsonDecoder().decode(UpdateResult.self, from: reply)
-        //return UpdateResult(from: reply)
     }
 
     /**
@@ -795,7 +790,6 @@ public class MongoCollection<T: Codable> {
         }
 
         return try BsonDecoder().decode(UpdateResult.self, from: reply)
-        //return UpdateResult(from: reply)
     }
 
     /**
@@ -820,7 +814,6 @@ public class MongoCollection<T: Codable> {
         }
 
         return try BsonDecoder().decode(UpdateResult.self, from: reply)
-        //return UpdateResult(from: reply)
     }
 
     /**
