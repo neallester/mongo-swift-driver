@@ -2,6 +2,7 @@ import Foundation
 @testable import MongoSwift
 import Nimble
 import XCTest
+import libmongoc
 
 /// Useful extensions to the Data type for testing purposes
 extension Data {
@@ -36,6 +37,18 @@ final class DocumentTests: XCTestCase {
             ("testRawBSON", testRawBSON),
             ("testBSONCorpus", testBSONCorpus)
         ]
+    }
+
+    func testFailure() throws {
+        // this works fine
+        let extjson1 = "{\"a\" : [{\"$numberInt\": \"10\"}]}".data(using: .utf8)!
+        let res1 = try Document(fromJSON: extjson1)
+        print(res1)
+
+        // this crashes
+        let extjson2 = "{\"x\" : { \"$binary\" : {\"base64\" : \"\", \"subType\" : \"00\"}}}".data(using: .utf8)!
+        let res2 = try Document(fromJSON: extjson2)
+        print(res2)
     }
 
     func testDocument() throws {
