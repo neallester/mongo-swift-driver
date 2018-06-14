@@ -509,4 +509,18 @@ final class CodecTests: XCTestCase {
         let values2 = [BasicStruct(int: 1, string: "hello"), nil]
         expect(try encoder.encode(values2)).to(equal([["int": 1, "string": "hello"], nil]))
     }
+
+    struct AnyBsonStruct: Codable {
+        let value: AnyBsonValue
+    }
+
+    func testAnyBsonValueIsCodable() throws {
+        let encoder = BsonEncoder()
+        let val1 = AnyBsonValue(["x": 1] as Document)
+        expect(try encoder.encode(val1)).to(equal(["x": 1]))
+
+        let decoder = BsonDecoder()
+        let res = try decoder.decode(AnyBsonValue.self, from: ["x": 1])
+        expect(res.value as? Document).to(equal(val1.value as? Document))
+    }
 }
