@@ -7,7 +7,7 @@ public struct AnyBsonValue: Codable {
         self.value = value
     }
 
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         if let arr = self.value as? [BsonValue?] {
             let mapped = arr.map { elt in
                 return elt == nil ? nil : AnyBsonValue(elt!)
@@ -19,7 +19,7 @@ public struct AnyBsonValue: Codable {
     }
 
     // swiftlint:disable:next cyclomatic_complexity
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         if let value = try? container.decode(Double.self) {
             self.value = value
